@@ -1,6 +1,10 @@
 // `rstlss` is an example of an unprivileged Linux process using a BPF filter
 // to block certain TCP packets coming to the socket.
 //
+// Inspired by awesome blog post "eBPF, Sockets, Hop Distance and manually
+// writing eBPF assembly" by Marek Majkowski:
+// https://blog.cloudflare.com/epbf_sockets_hop_distance/
+//
 // CC0, No Rights Reserved.  -- Leonid Evdokimov <leon@darkk.net.ru>
 
 package main
@@ -32,6 +36,8 @@ func main() {
 	}
 
 	// https://en.wikipedia.org/wiki/Transmission_Control_Protocol#TCP_segment_structure
+	// IP headers are also reachable at some magic offset
+	// https://github.com/torvalds/linux/blob/ead751507de86d90fa250431e9990a8b881f713c/include/uapi/linux/filter.h#L84
 	filter, err := bpf.Assemble([]bpf.Instruction{
 		bpf.LoadAbsolute{Off: 13, Size: 1},                        // load flags[RST]
 		bpf.JumpIf{Cond: bpf.JumpBitsSet, Val: 0x04, SkipTrue: 1}, // check RST
